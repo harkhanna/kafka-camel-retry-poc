@@ -1,0 +1,13 @@
+kafka:
+    consumer:
+        allowManualCommit: true
+        autoCommitEnable: false
+        autoOffsetReset: earliest
+        breakOnFirstError: false
+        consumerCount: 1
+        group: kafkaGroup
+        maxPollRecords: 10
+        seekTo: ''
+    endpointPrefix: 'kafka:'
+    host: localhost:9092
+    topic:
