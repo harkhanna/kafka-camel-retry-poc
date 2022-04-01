@@ -2,9 +2,9 @@ package com.npa.kafka.retryconsumer.route;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeoutException;
 import org.apache.camel.Exchange;
 import org.apache.camel.LoggingLevel;
-import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.kafka.KafkaConstants;
 import org.apache.camel.component.kafka.KafkaManualCommit;
@@ -20,48 +20,54 @@ public class RetryRoute extends RouteBuilder {
   @Override
   public void configure() {
 
-    restConfiguration().host("localhost").port("8000");
+    restConfiguration().host("localhost").port("9080");
 
-    String kafkaUrl = buildKafkaUrl();
-    LOGGER.info("Kafka consumer URL is : {}", kafkaUrl);
-    LOGGER.info("Start time is " + LocalDateTime.now().toString());
+    String topicUrl1 = buildKafkaUrl("retry_topic_1");
+    String topicUrl2 = buildKafkaUrl("retry_topic_2");
+    LOGGER.info("Kafka consumer URL 1 is : {}", topicUrl1);
+    LOGGER.info("Kafka consumer URL 2 is : {}", topicUrl2);
+    LOGGER.info("Start time is " + LocalDateTime.now());
 
-    onException(IOException.class)
-        .log(LoggingLevel.WARN, "${exception.message}")
+    onException(Exception.class)
+        .log("Exception message is ${exception.message}")
         .maximumRedeliveries(2)
-        .redeliveryDelay(200)
+        .redeliveryDelay(100)
         .useExponentialBackOff()
         .backOffMultiplier(2)
-        .process(exchange -> {
-          // Handle as per business requirement
-          // Can send to another topic or DLQ
-          doManualCommit(exchange);
-        })
+        .log("BEFORE exception commit")
+        .process(this::doManualCommit)
         // Introducing jitter is pending here
-        .handled(true)
-    ;
+        .handled(true);
 
-    from(kafkaUrl)
+    from(topicUrl1)
         .process(exchange -> {
           LOGGER.info(this.dumpKafkaDetails(exchange));
-        })/*
-        .process(exchange -> {
-          String in = exchange.getIn().getBody(String.class);
-          String out = in;
-          out = new StringBuilder(in).reverse().toString();
-          exchange.getIn().setBody(out);
         })
+        .log("before rest call 1")
+        .circuitBreaker()
+        .inheritErrorHandler(true)
+            .resilience4jConfiguration().slidingWindowSize(10)
+            .writableStackTraceEnabled(false).timeoutEnabled(true).timeoutDuration(1000)
+            .minimumNumberOfCalls(5).waitDurationInOpenState(20).end()
+        .to("rest:get:/sample/hello")
+        .endCircuitBreaker()
+        .process(this::doManualCommit)
+        .log("end");
+
+    from(topicUrl2)
         .process(exchange -> {
-          LOGGER.info("message is now> {}", exchange.getIn().getBody(String.class));
-        })*/
-        .log("before rest call")
-        // Circuit breaker has been introduced after 3.xx of camel, but we are using 2.25.
-        //.circuitBreaker()
-        //.inheritErrorHandler(true) // Use defined error handler rather than Resilience CB handling
-        //.resilience4jConfiguration().timeoutEnabled(true).timeoutDuration(2000).end()
-        .to("rest:get:/customer/data")
-        //.end()
-        .log("end"); // This never gets logged as exception occurs in earlier line.
+          LOGGER.info(this.dumpKafkaDetails(exchange));
+        })
+        .log("before rest call 2")
+        .circuitBreaker()
+        .inheritErrorHandler(true)
+            .resilience4jConfiguration().slidingWindowSize(10)
+            .writableStackTraceEnabled(false).timeoutEnabled(true).timeoutDuration(1000)
+            .minimumNumberOfCalls(5).waitDurationInOpenState(20).end()
+        .to("http://localhost:8000/not-found")
+        .endCircuitBreaker()
+        .process(this::doManualCommit)
+        .log("end");
   }
 
   /*
@@ -85,7 +91,7 @@ public class RetryRoute extends RouteBuilder {
       if (manual != null) {
         LOGGER.info("manually committing the offset for batch");
         manual.commitSync();
-        LOGGER.info("End time is " + LocalDateTime.now().toString());
+        LOGGER.info("End time is " + LocalDateTime.now());
       }
     } else {
       LOGGER.info("NOT time to commit the offset yet");
@@ -113,19 +119,17 @@ public class RetryRoute extends RouteBuilder {
     return sb.toString();
   }
 
-  private String buildKafkaUrl() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("kafka:")
-        .append("retry_topic"); // TOPIC
-
-    sb.append("?brokers=").append("localhost:9092")
-    .append("&groupId=").append("kafkaConsumerGroup")
-    .append("&maxPollRecords=").append(10) // TODO Find default
-    .append("&consumersCount=").append(1)
-    .append("&autoOffsetReset=").append("earliest")
-    .append("&autoCommitEnable=").append(false)
-    .append("&allowManualCommit=").append(true)
-    .append("&breakOnFirstError=").append(false);
+  private String buildKafkaUrl(String topicName) {
+    StringBuilder sb = new StringBuilder("kafka:");
+    sb.append(topicName)
+        .append("?brokers=").append("localhost:9092")
+        .append("&groupId=").append("kafkaConsumerGroup")
+        .append("&maxPollRecords=").append(10) // Default is 500
+        .append("&consumersCount=").append(1)
+        .append("&autoOffsetReset=").append("earliest")
+        .append("&autoCommitEnable=").append(false)
+        .append("&allowManualCommit=").append(true)
+        .append("&breakOnFirstError=").append(false);
     // commitTimeoutMs - https://camel.apache.org/components/3.15.x/kafka-component.html#_endpoint_query_option_commitTimeoutMs
     // heartbeatIntervalMs - https://camel.apache.org/components/3.15.x/kafka-component.html#_component_option_heartbeatIntervalMs
     // maxPollIntervalMs - https://camel.apache.org/components/3.15.x/kafka-component.html#_endpoint_query_option_maxPollIntervalMs

@@ -1,0 +1,6 @@
+
+kafka-topics.bat --bootstrap-server localhost:9092 --create --topic retry_topic_1
+kafka-console-producer.bat --bootstrap-server localhost:9092 --topic retry_topic_1
+
+kafka-topics.bat --bootstrap-server localhost:9092 --create --topic retry_topic_2
+kafka-console-producer.bat --bootstrap-server localhost:9092 --topic retry_topic_2
