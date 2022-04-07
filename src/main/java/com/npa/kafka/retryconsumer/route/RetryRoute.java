@@ -26,35 +26,40 @@ public class RetryRoute extends RouteBuilder {
     String topicUrl2 = buildKafkaUrl("retry_topic_2");
     LOGGER.info("Kafka consumer URL 1 is : {}", topicUrl1);
     LOGGER.info("Kafka consumer URL 2 is : {}", topicUrl2);
-    LOGGER.info("Start time is " + LocalDateTime.now());
+    LOGGER.info("Start time is {}", LocalDateTime.now());
 
     onException(Exception.class)
         .log("Exception message is ${exception.message}")
-        .maximumRedeliveries(2)
-        .redeliveryDelay(100)
+        .maximumRedeliveries(-1) // -1 for infinite retries.
+        .redeliveryDelay(1000)
         .useExponentialBackOff()
         .backOffMultiplier(2)
         .log("BEFORE exception commit")
-        .process(this::doManualCommit)
+        //.process(this::doManualCommit)
         // Introducing jitter is pending here
-        .handled(true);
+        .handled(true)
+    ;
 
     from(topicUrl1)
+        .routeId("R1")
         .process(exchange -> {
           LOGGER.info(this.dumpKafkaDetails(exchange));
         })
         .log("before rest call 1")
         .circuitBreaker()
         .inheritErrorHandler(true)
-            .resilience4jConfiguration().slidingWindowSize(10)
-            .writableStackTraceEnabled(false).timeoutEnabled(true).timeoutDuration(1000)
-            .minimumNumberOfCalls(5).waitDurationInOpenState(20).end()
+          .resilience4jConfiguration().slidingWindowSize(10)
+          .writableStackTraceEnabled(false).timeoutEnabled(true).timeoutDuration(1000)
+          .minimumNumberOfCalls(5).waitDurationInOpenState(20).end()
+        //.delay(1000)
         .to("rest:get:/sample/hello")
+        .onFallback().log("FALLBACK") // This will not push for retry and instead will continue to next step in pipeline
         .endCircuitBreaker()
         .process(this::doManualCommit)
         .log("end");
 
-    from(topicUrl2)
+    /*from(topicUrl2)
+        .routeId("R2")
         .process(exchange -> {
           LOGGER.info(this.dumpKafkaDetails(exchange));
         })
@@ -67,7 +72,7 @@ public class RetryRoute extends RouteBuilder {
         .to("http://localhost:8000/not-found")
         .endCircuitBreaker()
         .process(this::doManualCommit)
-        .log("end");
+        .log("end");*/
   }
 
   /*
