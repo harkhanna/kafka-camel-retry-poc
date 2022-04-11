@@ -1,13 +1,13 @@
-package com.npa.kafka.retryconsumer;
+package com.npa.kafka.sampleservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class RetryConsumerApplication {
+public class SampleServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(RetryConsumerApplication.class, args);
+		SpringApplication.run(SampleServiceApplication.class, args);
 	}
 
 }

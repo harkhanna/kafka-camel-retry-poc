@@ -1,3 +1,8 @@
 logging:
-    level:
-        root: INFO
+  level:
+    root: INFO
+
+server:
+  port: 9080
+  servlet:
+    context-path: /sample
