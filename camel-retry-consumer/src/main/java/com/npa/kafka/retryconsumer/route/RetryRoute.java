@@ -34,7 +34,8 @@ public class RetryRoute extends RouteBuilder {
         .redeliveryDelay(100)
         .useExponentialBackOff()
         .backOffMultiplier(2)
-        .maximumRedeliveryDelay(512) // To limit the maximum duration between retries so that exponential backoff does not go out of limits.
+        .maximumRedeliveryDelay(
+            512) // To limit the maximum duration between retries so that exponential backoff does not go out of limits.
         .useCollisionAvoidance() // random trigger
         .log("BEFORE exception commit")
         //.process(this::doManualCommit)
@@ -49,9 +50,9 @@ public class RetryRoute extends RouteBuilder {
         .log("before rest call 1")
         .circuitBreaker()
         .inheritErrorHandler(true)
-          .resilience4jConfiguration().slidingWindowSize(10)
-          .writableStackTraceEnabled(false).timeoutEnabled(true).timeoutDuration(1000)
-          .minimumNumberOfCalls(5).waitDurationInOpenState(20).end()
+        .resilience4jConfiguration().slidingWindowSize(10)
+        .writableStackTraceEnabled(false).timeoutEnabled(true).timeoutDuration(1000)
+        .minimumNumberOfCalls(5).waitDurationInOpenState(20).end()
         //.delay(1000)
         .to("rest:get:/sample/hello")
         //.onFallback().log("FALLBACK") // This will not push for retry and instead will continue to next step in pipeline
@@ -97,7 +98,7 @@ public class RetryRoute extends RouteBuilder {
       if (manual != null) {
         LOGGER.info("manually committing the offset for batch");
         manual.commitSync();
-        LOGGER.info("End time is " + LocalDateTime.now());
+        LOGGER.info("End time is {} ", LocalDateTime.now());
       }
     } else {
       LOGGER.info("NOT time to commit the offset yet");
