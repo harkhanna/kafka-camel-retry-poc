@@ -22,7 +22,7 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>retry-consumer</module>
+    <module>camel-retry-consumer</module>
     <module>sample-service</module>
   </modules>
 
