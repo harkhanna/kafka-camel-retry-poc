@@ -30,13 +30,14 @@ public class RetryRoute extends RouteBuilder {
 
     onException(Exception.class)
         .log("Exception message is ${exception.message}")
-        .maximumRedeliveries(-1) // -1 for infinite retries.
-        .redeliveryDelay(1000)
+        .maximumRedeliveries(10) // -1 for infinite retries.
+        .redeliveryDelay(100)
         .useExponentialBackOff()
         .backOffMultiplier(2)
+        .maximumRedeliveryDelay(512) // To limit the maximum duration between retries so that exponential backoff does not go out of limits.
+        .useCollisionAvoidance() // random trigger
         .log("BEFORE exception commit")
         //.process(this::doManualCommit)
-        // Introducing jitter is pending here
         .handled(true)
     ;
 
@@ -53,7 +54,7 @@ public class RetryRoute extends RouteBuilder {
           .minimumNumberOfCalls(5).waitDurationInOpenState(20).end()
         //.delay(1000)
         .to("rest:get:/sample/hello")
-        .onFallback().log("FALLBACK") // This will not push for retry and instead will continue to next step in pipeline
+        //.onFallback().log("FALLBACK") // This will not push for retry and instead will continue to next step in pipeline
         .endCircuitBreaker()
         .process(this::doManualCommit)
         .log("end");

@@ -1,3 +1,11 @@
+NOTE :- All below commands are for windows systems. Please use .sh files for Mac systems
+
+#Start Zookeeper
+zookeeper-server-start.bat ./config/zookeeper.properties
+
+#Start Kafka
+kafka-server-start.bat ./config/server.properties
+
 #Create Topics
 kafka-topics.bat --bootstrap-server localhost:9092 --create --topic retry_topic_1
 kafka-topics.bat --bootstrap-server localhost:9092 --create --topic retry_topic_2
