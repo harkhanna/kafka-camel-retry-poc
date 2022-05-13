@@ -30,13 +30,13 @@ public class RetryRoute extends RouteBuilder {
 
     onException(Exception.class)
         .log("Exception message is ${exception.message}")
-        .maximumRedeliveries(10) // -1 for infinite retries.
+        .maximumRedeliveries(2) // -1 for infinite retries.
         .redeliveryDelay(100)
         .useExponentialBackOff()
         .backOffMultiplier(2)
         .maximumRedeliveryDelay(
-            512) // To limit the maximum duration between retries so that exponential backoff does not go out of limits.
-        .useCollisionAvoidance() // random trigger
+            1024) // To limit the maximum duration between retries so that exponential backoff does not go out of limits.
+        //.useCollisionAvoidance() // random trigger
         .log("BEFORE exception commit")
         //.process(this::doManualCommit)
         .handled(true)
@@ -44,9 +44,8 @@ public class RetryRoute extends RouteBuilder {
 
     from(topicUrl1)
         .routeId("R1")
-        .process(exchange -> {
-          LOGGER.info(this.dumpKafkaDetails(exchange));
-        })
+        .throttle(100).timePeriodMillis(10000) //Default 1000 ms
+        .process(this::dumpKafkaDetails)
         .log("before rest call 1")
         .circuitBreaker()
         .inheritErrorHandler(true)
@@ -105,7 +104,7 @@ public class RetryRoute extends RouteBuilder {
     }
   }
 
-  private String dumpKafkaDetails(Exchange exchange) {
+  private void dumpKafkaDetails(Exchange exchange) {
     StringBuilder sb = new StringBuilder();
     sb.append("\r\n");
     sb.append("\r\n");
@@ -123,7 +122,7 @@ public class RetryRoute extends RouteBuilder {
         .append(exchange.getIn().getHeader(KafkaConstants.LAST_RECORD_BEFORE_COMMIT));
     sb.append("\r\n");
 
-    return sb.toString();
+    LOGGER.info(sb.toString());
   }
 
   private String buildKafkaUrl(String topicName) {
