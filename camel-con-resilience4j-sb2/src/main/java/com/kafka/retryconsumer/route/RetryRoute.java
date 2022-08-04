@@ -8,7 +8,6 @@ import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.kafka.KafkaConstants;
 import org.apache.camel.component.kafka.KafkaManualCommit;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -17,10 +16,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Component
 public class RetryRoute extends RouteBuilder {
-
-    private static final String KAFKA_ENDPOINT = "kafka:%s?groupId=%s";
     private final PocRestClient pocRestClient;
-    private final RetryTemplate retryInstanceTopic1;
+    //private final RetryTemplate retryInstanceTopic1;
 
     @Override
     public void configure() {
@@ -35,14 +32,11 @@ public class RetryRoute extends RouteBuilder {
                 .process(exchange -> log.info(this.dumpKafkaDetails(exchange)))
                 .log("before rest call 1")
                 .doTry()
-                .process(exchange -> retryInstanceTopic1.execute(context -> {
-                    pocRestClient.restClient1(exchange);
-                    return null;
-                }))
+                .process(pocRestClient::restClient1)
                 .doCatch(Exception.class)
-                .log("error topic producer goes here...")
-                .end()
+                .log("Committing offset as data sent to retry service")
                 .process(this::doManualCommit)
+                .end()
                 .log("end");
 
         /*from(topicUrl2)
@@ -59,10 +53,10 @@ public class RetryRoute extends RouteBuilder {
     }
 
     private void doManualCommit(Exchange exchange) {
-        Boolean lastOne = exchange.getIn()
-                .getHeader(KafkaConstants.LAST_RECORD_BEFORE_COMMIT, Boolean.class);
+        /*Boolean lastOne = exchange.getIn()
+                .getHeader(KafkaConstants.LAST_RECORD_BEFORE_COMMIT, Boolean.class);*/
 
-        if (lastOne != null && lastOne) {
+        //if (lastOne != null && lastOne) {
             KafkaManualCommit manual =
                     exchange.getIn().getHeader(KafkaConstants.MANUAL_COMMIT, KafkaManualCommit.class);
             if (manual != null) {
@@ -70,9 +64,9 @@ public class RetryRoute extends RouteBuilder {
                 manual.commitSync();
                 log.info("End time is {} ", LocalDateTime.now());
             }
-        } else {
+        /*} else {
             log.info("NOT time to commit the offset yet");
-        }
+        }*/
     }
 
     private String dumpKafkaDetails(Exchange exchange) {
@@ -87,9 +81,6 @@ public class RetryRoute extends RouteBuilder {
         sb.append("From partition: ")
                 .append(exchange.getIn().getHeader(KafkaConstants.PARTITION));
         sb.append("\r\n");
-        sb.append("From partition Key: ")
-                .append(exchange.getIn().getHeader(KafkaConstants.PARTITION_KEY));
-        sb.append("\r\n");
         sb.append("Offset: ").append(exchange.getIn().getHeader(KafkaConstants.OFFSET));
         sb.append("\r\n");
         sb.append("Is last record ?: ")
@@ -102,14 +93,14 @@ public class RetryRoute extends RouteBuilder {
     private String buildKafkaUrl(String topicName) {
         StringBuilder sb = new StringBuilder("kafka:");
         sb.append(topicName)
-                .append("?brokers=").append("localhost:9092")
-                .append("&groupId=").append("kafkaConsumerGroup")
-                .append("&maxPollRecords=").append(10) // Default is 500
-                .append("&consumersCount=").append(1)
-                .append("&autoOffsetReset=").append("earliest")
-                .append("&autoCommitEnable=").append(false)
-                .append("&allowManualCommit=").append(true)
-                .append("&breakOnFirstError=").append(false);
+        .append("?brokers=").append("localhost:9092")
+        .append("&groupId=").append("kafkaConsumerGroup")
+        .append("&maxPollRecords=").append(5) // Default is 500
+        .append("&consumersCount=").append(1)
+        .append("&autoOffsetReset=").append("earliest")
+        .append("&autoCommitEnable=").append(false)
+        .append("&allowManualCommit=").append(true)
+        .append("&breakOnFirstError=").append(false);
         // commitTimeoutMs - https://camel.apache.org/components/3.15.x/kafka-component.html#_endpoint_query_option_commitTimeoutMs
         // heartbeatIntervalMs - https://camel.apache.org/components/3.15.x/kafka-component.html#_component_option_heartbeatIntervalMs
         // maxPollIntervalMs - https://camel.apache.org/components/3.15.x/kafka-component.html#_endpoint_query_option_maxPollIntervalMs

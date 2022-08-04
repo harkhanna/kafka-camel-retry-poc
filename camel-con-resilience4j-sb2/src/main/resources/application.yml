@@ -4,4 +4,4 @@ server.port: 8080
 logging.level:
   root: INFO
   org.springframework: INFO
-  org.apache.camel.component.resilience: DEBUG
+  org.apache.camel.component.resilience: INFO

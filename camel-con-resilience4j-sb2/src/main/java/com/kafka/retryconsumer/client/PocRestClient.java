@@ -18,6 +18,7 @@ public class PocRestClient {
     private static final String SERVICE_URL = "http://localhost:9080/sample/hello?message=";
 
     @CircuitBreaker(name = CircuitBreakerInstances.CIRCUIT_BREAKER_INSTANCE_TOPIC_1)
+    @Retry(name = RetryInstances.RETRY_INSTANCE_TOPIC_1)
     public void restClient1(Exchange exchange) {
         internalRestClient(exchange);
     }
@@ -29,7 +30,7 @@ public class PocRestClient {
     }
 
     public void internalRestClient(Exchange exchange) {
-        log.info(" Making a request to {} at :{}", SERVICE_URL + exchange.getIn().getBody().toString(), LocalDateTime.now());
+        log.info("Request to {} at :{}", SERVICE_URL + exchange.getIn().getBody().toString(), LocalDateTime.now());
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.getForObject(SERVICE_URL + exchange.getIn().getBody().toString(), String.class);
     }
