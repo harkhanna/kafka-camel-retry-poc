@@ -1,21 +1,16 @@
-package com.npa.kafka.retryconsumer.route;
+package com.kafka.retryconsumer.route;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.concurrent.TimeoutException;
+import lombok.extern.log4j.Log4j;
 import org.apache.camel.Exchange;
-import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.kafka.KafkaConstants;
 import org.apache.camel.component.kafka.KafkaManualCommit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
 
 @Component
 public class RetryRoute extends RouteBuilder {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(RetryRoute.class);
 
   @Override
   public void configure() {
@@ -24,9 +19,9 @@ public class RetryRoute extends RouteBuilder {
 
     String topicUrl1 = buildKafkaUrl("retry_topic_1");
     String topicUrl2 = buildKafkaUrl("retry_topic_2");
-    LOGGER.info("Kafka consumer URL 1 is : {}", topicUrl1);
-    LOGGER.info("Kafka consumer URL 2 is : {}", topicUrl2);
-    LOGGER.info("Start time is {}", LocalDateTime.now());
+    log.info("Kafka consumer URL 1 is : {}", topicUrl1);
+    log.info("Kafka consumer URL 2 is : {}", topicUrl2);
+    log.info("Start time is {}", LocalDateTime.now());
 
     onException(Exception.class)
         .log("Exception message is ${exception.message}")
@@ -95,12 +90,12 @@ public class RetryRoute extends RouteBuilder {
       KafkaManualCommit manual =
           exchange.getIn().getHeader(KafkaConstants.MANUAL_COMMIT, KafkaManualCommit.class);
       if (manual != null) {
-        LOGGER.info("manually committing the offset for batch");
+        log.info("manually committing the offset for batch");
         manual.commitSync();
-        LOGGER.info("End time is {} ", LocalDateTime.now());
+        log.info("End time is {} ", LocalDateTime.now());
       }
     } else {
-      LOGGER.info("NOT time to commit the offset yet");
+      log.info("NOT time to commit the offset yet");
     }
   }
 
@@ -122,7 +117,7 @@ public class RetryRoute extends RouteBuilder {
         .append(exchange.getIn().getHeader(KafkaConstants.LAST_RECORD_BEFORE_COMMIT));
     sb.append("\r\n");
 
-    LOGGER.info(sb.toString());
+    log.info(sb.toString());
   }
 
   private String buildKafkaUrl(String topicName) {

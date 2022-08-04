@@ -1,10 +1,10 @@
-package com.npa.kafka.retryconsumer;
+package com.kafka.sampleservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class RetryConsumerApplicationTests {
+class SampleServiceApplicationTests {
 
 	@Test
 	void contextLoads() {

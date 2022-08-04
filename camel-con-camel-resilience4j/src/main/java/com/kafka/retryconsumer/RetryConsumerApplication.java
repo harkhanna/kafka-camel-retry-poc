@@ -1,4 +1,4 @@
-package com.npa.kafka.retryconsumer;
+package com.kafka.retryconsumer;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
