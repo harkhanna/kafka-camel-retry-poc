@@ -2,3 +2,5 @@
 /camel-con-resilience4j-sb2/target/
 /.idea/
 /sample-service/target/
+/camel-con-resilience4j-sb2/src/main/main.iml
+/camel-con-resilience4j-sb2/src/test/test.iml

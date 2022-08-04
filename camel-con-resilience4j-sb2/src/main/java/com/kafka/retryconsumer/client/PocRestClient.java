@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Slf4j
 public class PocRestClient {
 
-    private static final String SERVICE_URL = "http://localhost:6060/?message=";
+    private static final String SERVICE_URL = "http://localhost:9080/sample/hello?message=";
 
     @CircuitBreaker(name = CircuitBreakerInstances.CIRCUIT_BREAKER_INSTANCE_TOPIC_1)
     public void restClient1(Exchange exchange) {
@@ -29,8 +29,7 @@ public class PocRestClient {
     }
 
     public void internalRestClient(String message) {
-        log.debug("rest call...");
-        log.debug(" Making a request to {} at :{}", SERVICE_URL + message, LocalDateTime.now());
+        log.info(" Making a request to {} at :{}", SERVICE_URL + message, LocalDateTime.now());
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.getForObject(SERVICE_URL, String.class);
     }

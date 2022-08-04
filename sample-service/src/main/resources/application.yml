@@ -1,5 +1,4 @@
-logging:
-  level:
+logging.level:
     root: INFO
 
 server:
