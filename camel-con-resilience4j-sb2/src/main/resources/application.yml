@@ -1,0 +1,16 @@
+spring.application.name: camel-con-resilience4j-sb2
+server.port: 8081
+
+logging.level:
+  root: INFO
+  org.springframework: INFO
+  org.apache.camel.component.resilience: DEBUG
+
+camel:
+  component:
+    kafka:
+      brokers: localhost:9092
+      auto-commit-enable: false
+      allow-manual-commit: true
+      auto-offset-reset: earliest
+      break-on-first-error: false
