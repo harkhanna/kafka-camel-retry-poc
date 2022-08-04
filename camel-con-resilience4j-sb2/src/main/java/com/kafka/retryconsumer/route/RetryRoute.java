@@ -25,7 +25,12 @@ public class RetryRoute extends RouteBuilder {
     @Override
     public void configure() {
 
-        fromF(KAFKA_ENDPOINT, "retry_topic_1", "group_id_1")
+        String topicUrl1 = buildKafkaUrl("retry_topic_1");
+        String topicUrl2 = buildKafkaUrl("retry_topic_2");
+        log.info("Kafka consumer URL 1 is : {}", topicUrl1);
+        log.info("Kafka consumer URL 2 is : {}", topicUrl2);
+
+        from(topicUrl1)
                 .routeId("R1")
                 .process(exchange -> log.info(this.dumpKafkaDetails(exchange)))
                 .log("before rest call 1")
@@ -40,7 +45,7 @@ public class RetryRoute extends RouteBuilder {
                 .process(this::doManualCommit)
                 .log("end");
 
-        fromF(KAFKA_ENDPOINT, "retry_topic_2", "group_id_2")
+        /*from(topicUrl2)
                 .routeId("R2")
                 .process(exchange -> log.info(this.dumpKafkaDetails(exchange)))
                 .log("before rest call 2")
@@ -50,7 +55,7 @@ public class RetryRoute extends RouteBuilder {
                 .log("error topic producer goes here...")
                 .end()
                 .process(this::doManualCommit)
-                .log("end");
+                .log("end");*/
     }
 
     private void doManualCommit(Exchange exchange) {
@@ -82,11 +87,33 @@ public class RetryRoute extends RouteBuilder {
         sb.append("From partition: ")
                 .append(exchange.getIn().getHeader(KafkaConstants.PARTITION));
         sb.append("\r\n");
+        sb.append("From partition Key: ")
+                .append(exchange.getIn().getHeader(KafkaConstants.PARTITION_KEY));
+        sb.append("\r\n");
         sb.append("Offset: ").append(exchange.getIn().getHeader(KafkaConstants.OFFSET));
         sb.append("\r\n");
         sb.append("Is last record ?: ")
                 .append(exchange.getIn().getHeader(KafkaConstants.LAST_RECORD_BEFORE_COMMIT));
         sb.append("\r\n");
+
+        return sb.toString();
+    }
+
+    private String buildKafkaUrl(String topicName) {
+        StringBuilder sb = new StringBuilder("kafka:");
+        sb.append(topicName)
+                .append("?brokers=").append("localhost:9092")
+                .append("&groupId=").append("kafkaConsumerGroup")
+                .append("&maxPollRecords=").append(10) // Default is 500
+                .append("&consumersCount=").append(1)
+                .append("&autoOffsetReset=").append("earliest")
+                .append("&autoCommitEnable=").append(false)
+                .append("&allowManualCommit=").append(true)
+                .append("&breakOnFirstError=").append(false);
+        // commitTimeoutMs - https://camel.apache.org/components/3.15.x/kafka-component.html#_endpoint_query_option_commitTimeoutMs
+        // heartbeatIntervalMs - https://camel.apache.org/components/3.15.x/kafka-component.html#_component_option_heartbeatIntervalMs
+        // maxPollIntervalMs - https://camel.apache.org/components/3.15.x/kafka-component.html#_endpoint_query_option_maxPollIntervalMs
+        // sessionTimeoutMs - https://camel.apache.org/components/3.15.x/kafka-component.html#_endpoint_query_option_sessionTimeoutMs
 
         return sb.toString();
     }

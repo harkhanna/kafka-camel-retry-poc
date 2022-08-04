@@ -19,18 +19,18 @@ public class PocRestClient {
 
     @CircuitBreaker(name = CircuitBreakerInstances.CIRCUIT_BREAKER_INSTANCE_TOPIC_1)
     public void restClient1(Exchange exchange) {
-        internalRestClient(exchange.getIn().getBody().toString());
+        internalRestClient(exchange);
     }
 
     @CircuitBreaker(name = CircuitBreakerInstances.CIRCUIT_BREAKER_INSTANCE_TOPIC_2)
     @Retry(name = RetryInstances.RETRY_INSTANCE_TOPIC_2)
     public void restClient2(Exchange exchange) {
-        internalRestClient(exchange.getIn().getBody().toString());
+        internalRestClient(exchange);
     }
 
-    public void internalRestClient(String message) {
-        log.info(" Making a request to {} at :{}", SERVICE_URL + message, LocalDateTime.now());
+    public void internalRestClient(Exchange exchange) {
+        log.info(" Making a request to {} at :{}", SERVICE_URL + exchange.getIn().getBody().toString(), LocalDateTime.now());
         RestTemplate restTemplate = new RestTemplate();
-        restTemplate.getForObject(SERVICE_URL, String.class);
+        restTemplate.getForObject(SERVICE_URL + exchange.getIn().getBody().toString(), String.class);
     }
 }

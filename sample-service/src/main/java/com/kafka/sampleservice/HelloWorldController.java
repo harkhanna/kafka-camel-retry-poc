@@ -1,6 +1,5 @@
 package com.kafka.sampleservice;
 
-import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,10 +12,10 @@ public class HelloWorldController {
   Logger log = LoggerFactory.getLogger(HelloWorldController.class);
 
   @GetMapping("/hello")
-  public String printSomething(@RequestParam("message") String exchangeInfo) {
+  public String printSomething(@RequestParam String message) {
 
-    log.info("Message received is " + exchangeInfo);
-    return "Message received is " + exchangeInfo;
+    log.info("Message received is " + message);
+    return "Message received is " + message;
   }
 
 }

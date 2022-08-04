@@ -1,6 +1,5 @@
 package com.kafka.retryconsumer.route;
 
-import lombok.extern.log4j.Log4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.kafka.KafkaConstants;
