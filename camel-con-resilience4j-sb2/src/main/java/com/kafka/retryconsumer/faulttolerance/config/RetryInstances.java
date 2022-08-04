@@ -33,15 +33,15 @@ public class RetryInstances {
                 .retryExceptions(RestClientException.class,
                         CallNotPermittedException.class)
                 .intervalBiFunction(
-                        (integer, objects) -> {
+                        (attempt, objects) -> {
                             long duration = Duration.ofSeconds(1).toMillis();
                             long cbDuration = Optional.ofNullable(circuitBreaker)
                                     .filter(cb -> !cb.tryAcquirePermission())
                                     .map(cb -> cb.getCircuitBreakerConfig()
-                                            .getWaitIntervalFunctionInOpenState().apply(integer) + 1000L)
+                                            .getWaitIntervalFunctionInOpenState().apply(attempt) + 1000L)
                                     .orElse(0L);
                             final var maxDuration = Math.max(duration, cbDuration);
-                            log.info("retry back-off: {}, {}ms", integer, maxDuration);
+                            log.info("retry back-off: {}, {}ms", attempt, maxDuration);
                             return maxDuration;
                         }
                 )

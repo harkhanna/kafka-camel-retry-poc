@@ -26,7 +26,7 @@ public class CircuitBreakerInstances {
         return CircuitBreakerConfig
                 .custom()
                 .failureRateThreshold(60)
-                .waitDurationInOpenState(Duration.ofSeconds(20))
+                .waitDurationInOpenState(Duration.ofSeconds(10))
                 .minimumNumberOfCalls(5)
                 .slidingWindowType(CircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
                 .slidingWindowSize(10)
